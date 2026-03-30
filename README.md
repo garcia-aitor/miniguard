@@ -14,7 +14,7 @@ MiniGuard is built in three layers that directly mirror AdGuard's internal archi
 
 **Pipeline** — Downloads the real [AdGuard Base Filter](https://raw.githubusercontent.com/AdguardTeam/FiltersRegistry/master/filters/filter_2_Base/filter.txt) (100k+ rules), parses it line by line using Node.js streams, classifies each rule by type (network, cosmetic, exception, scriptlet), and converts the convertible ones to Chrome's Declarative Net Request format. This mirrors what AdGuard's `pnpm resources:mv3` build step does internally.
 
-**Matching Engine** — A URL matching engine that builds a shortcut-based lookup table at startup, reducing the search space from 90k+ rules to a handful of candidates per request. This directly mirrors the approach used by AdGuard's [TSUrlFilter](https://github.com/AdguardTeam/tsurlfilter) library, which extracts shortcuts from rule patterns and indexes them for O(1) lookup.
+**Matching Engine** — A standalone Node.js implementation of a shortcut-based URL matching engine, built to understand how AdGuard's [TSUrlFilter](https://github.com/AdguardTeam/tsurlfilter) works internally. It builds a lookup table at startup that reduces the search space from 90k+ rules to a handful of candidates per request. This is not used by the extension directly — in MV3, Chrome's DNR handles request matching — but it demonstrates the core algorithm that TSUrlFilter uses in production for rules that DNR cannot express (complex modifiers, `$third-party`, `$domain=`, etc.).
 
 **Browser Extension** — A Manifest V3 Chrome extension that loads the converted rules, blocks matching network requests via the DNR API, injects cosmetic CSS rules into every page via a content script, and displays live blocking statistics in a popup. This mirrors the architecture of [AdGuard Browser Extension](https://github.com/AdguardTeam/AdguardBrowserExtension), which uses the same background service worker + content script split.
 
@@ -47,7 +47,7 @@ Building even a minimal version of AdGuard surfaces the same hard problems the A
 miniguard/
 ├── pipeline.mjs          # Downloads and parses the real AdGuard Base Filter
 ├── convert.mjs           # Converts network rules to DNR format
-├── engine.mjs            # URL matching engine with shortcut lookup table
+├── engine.mjs            # Standalone URL matching engine (educational — not used by the extension)
 ├── output/
 │   ├── network_rules.json
 │   └── cosmetic_rules.json
@@ -62,7 +62,7 @@ miniguard/
 
 ## What this is not
 
-MiniGuard implements a small subset of what AdGuard does. It does not handle scriptlets, HTML filtering, extended CSS selectors, `$redirect` rules, stealth mode, or tracking protection. It processes one filter list instead of the dozens AdGuard maintains. For actual privacy protection, use [AdGuard](https://adguard.com) or [uBlock Origin](https://github.com/gorhill/uBlock).
+MiniGuard implements a small subset of what AdGuard does. It does not handle scriptlets, HTML filtering, extended CSS selectors, `$redirect` rules, stealth mode, or tracking protection. It processes one filter list instead of the dozens AdGuard maintains. The matching engine is a learning tool — in production, AdGuard uses [TSUrlFilter](https://github.com/AdguardTeam/tsurlfilter) directly. For actual privacy protection, use [AdGuard](https://adguard.com) or [uBlock Origin](https://github.com/gorhill/uBlock).
 
 ## References
 
